@@ -5,10 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Happy New Year 2026</title>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Alex+Brush&family=Montserrat:wght@300;400&display=swap" rel="stylesheet">
-
+    
     <style>
         :root { --dark-bg: #050505; --gold: #f4e4bc; }
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body {
             background-color: var(--dark-bg);
             color: #fff;
@@ -16,6 +16,7 @@
             height: 100vh; width: 100vw;
             font-family: 'Times New Roman', serif;
             cursor: pointer;
+            touch-action: manipulation; /* Tối ưu cho cảm ứng */
         }
 
         #sky-canvas { position: absolute; top: 0; left: 0; z-index: 1; background: radial-gradient(circle at bottom, #1a1a2e 0%, #000000 100%); }
@@ -49,7 +50,6 @@
             transition: opacity 0.5s;
         }
 
-        /* Countdown Strip (Bình thường) */
         .countdown-strip {
             position: absolute; bottom: 50px;
             display: flex; gap: 40px;
@@ -61,11 +61,10 @@
         .cd-num { font-size: 3rem; font-weight: 700; color: var(--gold); font-family: 'Cinzel', serif; }
         .cd-lbl { font-size: 0.8rem; text-transform: uppercase; color: #888; margin-top: 5px; }
 
-        /* BIG FINAL COUNTDOWN (10s cuối) */
         #big-countdown {
             position: absolute;
             font-family: 'Cinzel', serif;
-            font-size: 25rem; /* Siêu to khổng lồ */
+            font-size: 25rem; 
             font-weight: 900;
             color: var(--gold);
             text-shadow: 0 0 50px rgba(244, 228, 188, 0.8);
@@ -82,7 +81,6 @@
             100% { transform: scale(1.2); opacity: 0; }
         }
 
-        /* Lời chúc */
         .floating-wish {
             position: absolute; bottom: -50px;
             font-family: 'Alex Brush', cursive;
@@ -92,325 +90,338 @@
             white-space: nowrap;
             animation: floatUpMid linear forwards;
         }
-
         @keyframes floatUpMid {
             0% { transform: translateY(0) scale(0.9); opacity: 0; }
             10% { opacity: 1; }
             80% { opacity: 0.8; }
             100% { transform: translateY(-60vh) scale(1.1); opacity: 0; }
         }
-
+        
         #hint {
-            position: fixed; bottom: 20px; width: 100%; text-align: center;
-            font-size: 1rem; color: rgba(255,255,255,0.5); font-family: 'Montserrat', sans-serif;
+            position: fixed; bottom: 30px; width: 100%; text-align: center;
+            font-size: 1.2rem; color: #fff; font-family: 'Montserrat', sans-serif;
             pointer-events: none; animation: pulse 2s infinite; z-index: 100;
+            text-shadow: 0 0 5px #000;
+            transition: opacity 0.5s;
         }
-        @keyframes pulse { 0%,100% {opacity: 0.3} 50% {opacity: 1} }
-
+        @keyframes pulse { 0%,100% {opacity: 0.5} 50% {opacity: 1} }
+        .hidden-ui { opacity: 0 !important; pointer-events: none; }
         .shake { animation: shake 0.5s infinite; }
         @keyframes shake { 0% { transform: translate(1px, 1px); } 50% { transform: translate(-1px, -1px); } 100% { transform: translate(1px, -1px); } }
-
-        /* Class ẩn cho UI */
-        .hidden-ui { opacity: 0 !important; pointer-events: none; }
     </style>
 </head>
 <body>
 
-<canvas id="sky-canvas"></canvas>
-<div id="wishes-container"></div>
+    <canvas id="sky-canvas"></canvas>
+    <div id="wishes-container"></div>
+    <div id="hint">👇 Chạm mạnh vào màn hình để bật tiếng! 👇</div>
 
-<div id="hint">Chạm vào màn hình để bật âm thanh</div>
+    <div id="ui-layer">
+        <h1 class="main-title" id="main-text">Waiting...</h1>
+        <div class="year-sub" id="sub-title">2026</div>
 
-<div id="ui-layer">
-    <h1 class="main-title" id="main-text">Waiting...</h1>
-    <div class="year-sub" id="sub-title">2026</div>
+        <div id="big-countdown">10</div>
 
-    <div id="big-countdown">10</div>
-
-    <div class="countdown-strip" id="countdown-box">
-        <div class="cd-item"><div class="cd-num" id="d">00</div><div class="cd-lbl">Days</div></div>
-        <div class="cd-item"><div class="cd-num" id="h">00</div><div class="cd-lbl">Hrs</div></div>
-        <div class="cd-item"><div class="cd-num" id="m">00</div><div class="cd-lbl">Min</div></div>
-        <div class="cd-item"><div class="cd-num" id="s">00</div><div class="cd-lbl">Sec</div></div>
+        <div class="countdown-strip" id="countdown-box">
+            <div class="cd-item"><div class="cd-num" id="d">00</div><div class="cd-lbl">Days</div></div>
+            <div class="cd-item"><div class="cd-num" id="h">00</div><div class="cd-lbl">Hrs</div></div>
+            <div class="cd-item"><div class="cd-num" id="m">00</div><div class="cd-lbl">Min</div></div>
+            <div class="cd-item"><div class="cd-num" id="s">00</div><div class="cd-lbl">Sec</div></div>
+        </div>
     </div>
-</div>
 
-<script>
-    const CONFIG = {
+    <script>
+        // --- CẤU HÌNH ---
+        window.CONFIG = {
+            // Ngày thật: "January 1, 2026 00:00:00"
+            // Test 15 giây: new Date().getTime() + 15000
+            targetDate: "January 1, 2026 00:00:00", 
+            
+            gravity: 0.035, friction: 0.95, particlesPerExplosion: 300,
+            chanceWaiting: 0.03, 
+            finaleDuration: 15000, 
+            wishesList: ["Tài Lộc", "Sức Khỏe", "Bình An", "Hạnh Phúc", "Thăng Tiến", "May Mắn", "Vạn Sự", "Như Ý", "Tiền Tài"]
+        };
 
-        targetDate: "January 1, 2026 00:00:00",
+        window.state = {
+            isFinale: false,
+            postFinale: false,
+            audioCtx: null,
+            audioUnlocked: false
+        };
 
-
-        gravity: 0.035, friction: 0.95, particlesPerExplosion: 350,
-
-
-        chanceWaiting: 0.03,
-
-        finaleDuration: 15000,
-
-        wishesList: ["Tài Lộc", "Sức Khỏe", "Bình An", "Hạnh Phúc", "Thăng Tiến", "May Mắn", "Vạn Sự", "Như Ý", "Tiền Tài"]
-    };
-
-    let state = {
-        isFinale: false,
-        postFinale: false,
-        audioCtx: null,
-        audioUnlocked: false
-    };
-
-    /* --- 1. SOUND FX (TIẾNG PHÁO THUẦN TÚY) --- */
-    const SoundFX = {
-        init() {
-            const AudioContext = window.AudioContext || window.webkitAudioContext;
-            if(AudioContext) state.audioCtx = new AudioContext();
-        },
-        playWhistle() {
-            if(!state.audioCtx) return;
-            const t = state.audioCtx.currentTime;
-            const osc = state.audioCtx.createOscillator();
-            const gain = state.audioCtx.createGain();
-            osc.connect(gain); gain.connect(state.audioCtx.destination);
-            osc.frequency.setValueAtTime(800, t);
-            osc.frequency.exponentialRampToValueAtTime(400, t + 0.3);
-            gain.gain.setValueAtTime(0.05, t);
-            gain.gain.exponentialRampToValueAtTime(0.001, t + 0.3);
-            osc.start(t); osc.stop(t + 0.3);
-        },
-        playBoom() {
-            if(!state.audioCtx) return;
-            const t = state.audioCtx.currentTime;
-            const bufferSize = state.audioCtx.sampleRate * 2;
-            const buffer = state.audioCtx.createBuffer(1, bufferSize, state.audioCtx.sampleRate);
-            const data = buffer.getChannelData(0);
-            for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
-            const noise = state.audioCtx.createBufferSource();
-            noise.buffer = buffer;
-            const filter = state.audioCtx.createBiquadFilter();
-            filter.type = 'lowpass'; filter.frequency.value = 1000;
-            const gain = state.audioCtx.createGain();
-            noise.connect(filter); filter.connect(gain); gain.connect(state.audioCtx.destination);
-            gain.gain.setValueAtTime(0.5, t);
-            gain.gain.exponentialRampToValueAtTime(0.001, t + 1.5);
-            noise.start(t); noise.stop(t + 1.5);
-        }
-    };
-
-    /* --- 2. PHYSICS --- */
-    class Vector2 {
-        constructor(x, y) { this.x = x; this.y = y; }
-        add(v) { this.x += v.x; this.y += v.y; return this; }
-        mult(s) { this.x *= s; this.y *= s; return this; }
-    }
-
-    class Particle {
-        constructor(x, y, hue) {
-            this.pos = new Vector2(x, y);
-            const angle = Math.random() * Math.PI * 2;
-            const speed = Math.random() * 12 + 2;
-            this.vel = new Vector2(Math.cos(angle) * speed, Math.sin(angle) * speed);
-            this.friction = CONFIG.friction;
-            this.gravity = CONFIG.gravity;
-            this.hue = hue + Math.random() * 20 - 10;
-            this.brightness = Math.random() * 40 + 50;
-            this.alpha = 1;
-            this.decay = Math.random() * 0.005 + 0.004;
-        }
-        update() {
-            this.vel.mult(this.friction); this.vel.y += this.gravity;
-            this.pos.add(this.vel); this.alpha -= this.decay;
-        }
-        draw(ctx) {
-            ctx.beginPath(); ctx.arc(this.pos.x, this.pos.y, 1.5, 0, Math.PI * 2);
-            ctx.fillStyle = `hsla(${this.hue}, 100%, ${this.brightness}%, ${this.alpha})`; ctx.fill();
-        }
-    }
-
-    class Rocket {
-        constructor() {
-            this.x = Math.random() * window.innerWidth;
-            this.y = window.innerHeight;
-            this.tx = this.x + (Math.random() - 0.5) * 40;
-            this.ty = window.innerHeight * 0.1 + Math.random() * (window.innerHeight * 0.3);
-            this.speed = 12 + Math.random() * 4;
-            this.angle = Math.atan2(this.ty - this.y, this.tx - this.x);
-            this.vx = Math.cos(this.angle) * this.speed;
-            this.vy = Math.sin(this.angle) * this.speed;
-            this.hue = Math.random() * 360;
-            this.trail = []; this.dead = false;
-
-            // LUÔN CÓ TIẾNG RÍT KHI BẮN (Cả lúc chờ và lúc giao thừa)
-            //SoundFX.playWhistle();
-        }
-        update() {
-            this.trail.push({x: this.x, y: this.y});
-            if(this.trail.length > 5) this.trail.shift();
-            this.x += this.vx; this.y += this.vy; this.vy += 0.05;
-            if (this.y <= this.ty || this.vy >= 0) {
-                this.dead = true; Engine.explode(this.x, this.y, this.hue);
-            }
-        }
-        draw(ctx) {
-            ctx.beginPath();
-            if(this.trail.length) {
-                ctx.moveTo(this.trail[0].x, this.trail[0].y);
-                for(let p of this.trail) ctx.lineTo(p.x, p.y);
-            }
-            ctx.strokeStyle = `hsl(${this.hue}, 100%, 50%)`;
-            ctx.lineWidth = 2; ctx.stroke();
-        }
-    }
-
-    /* --- 3. ENGINE --- */
-    const Engine = {
-        canvas: document.getElementById('sky-canvas'),
-        ctx: null, w: 0, h: 0, rockets: [], particles: [], lastVolley: 0,
-        init() {
-            this.ctx = this.canvas.getContext('2d');
-            this.resize();
-            window.addEventListener('resize', () => this.resize());
-            this.loop();
-        },
-        resize() { this.w = this.canvas.width = window.innerWidth; this.h = this.canvas.height = window.innerHeight; },
-        explode(x, y, hue) {
-            // LUÔN CÓ TIẾNG NỔ (Cả lúc chờ và lúc giao thừa)
-            SoundFX.playBoom();
-            for (let i = 0; i < CONFIG.particlesPerExplosion; i++) this.particles.push(new Particle(x, y, hue));
-        },
-        loop(timestamp) {
-            requestAnimationFrame((t) => this.loop(t));
-
-            // LOGIC BẮN PHÁO
-            if (!this.lastVolley) this.lastVolley = timestamp;
-            const elapsed = timestamp - this.lastVolley;
-            const interval = state.isFinale ? 600 : 2000;
-
-            // 1. Chế độ Giao Thừa: Bắn dồn dập
-            if (state.isFinale && elapsed > interval) {
-                for(let k=0; k<8; k++) setTimeout(() => this.rockets.push(new Rocket()), k*100);
-                this.lastVolley = timestamp;
-            }
-
-            // 2. Chế độ Chờ: Bắn ngẫu nhiên (Vẫn có tiếng)
-            if (!state.isFinale && Math.random() < CONFIG.chanceWaiting) {
-                this.rockets.push(new Rocket());
-            }
-
-            this.ctx.globalCompositeOperation = 'destination-out';
-            this.ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
-            this.ctx.fillRect(0, 0, this.w, this.h);
-            this.ctx.globalCompositeOperation = 'lighter';
-
-            for (let i = this.rockets.length - 1; i >= 0; i--) {
-                this.rockets[i].draw(this.ctx); this.rockets[i].update();
-                if (this.rockets[i].dead) this.rockets.splice(i, 1);
-            }
-            for (let i = this.particles.length - 1; i >= 0; i--) {
-                this.particles[i].draw(this.ctx); this.particles[i].update();
-                if (this.particles[i].alpha <= 0) this.particles.splice(i, 1);
-            }
-        }
-    };
-
-    /* --- 4. MANAGER --- */
-    const Manager = {
-        init() {
-            SoundFX.init();
-            this.runCountdown();
-            setInterval(() => this.spawnWish(), 300);
-
-            const unlock = () => {
-                if(state.audioUnlocked) return;
-                if(state.audioCtx && state.audioCtx.state === 'suspended') state.audioCtx.resume();
-                document.getElementById('hint').style.opacity = 0;
-                state.audioUnlocked = true;
-            };
-            ['click', 'touchstart', 'scroll', 'mousemove'].forEach(evt => document.body.addEventListener(evt, unlock, {once:true}));
-        },
-        spawnWish() {
-            if (!state.isFinale && !state.postFinale) return; // Chỉ hiện lời chúc khi Giao Thừa
-
-            const container = document.getElementById('wishes-container');
-            const el = document.createElement('div');
-            el.classList.add('floating-wish');
-            el.innerText = CONFIG.wishesList[Math.floor(Math.random() * CONFIG.wishesList.length)];
-            el.style.left = Math.random() * 90 + '%';
-            el.style.fontSize = (Math.random() * 1.5 + 1) + 'rem';
-            el.style.animationDuration = (Math.random() * 3 + 4) + 's';
-            container.appendChild(el);
-            setTimeout(() => el.remove(), 7000);
-        },
-        runCountdown() {
-            const dest = (typeof CONFIG.targetDate === 'number') ? CONFIG.targetDate : new Date(CONFIG.targetDate).getTime();
-
-            const timer = setInterval(() => {
-                const now = new Date().getTime();
-                const dist = dest - now;
-                const secondsLeft = Math.ceil(dist / 1000);
-
-                // --- TRONG VÒNG 10 GIÂY CUỐI (10 -> 1) ---
-                if (secondsLeft <= 10 && secondsLeft > 0) {
-                    // Ẩn toàn bộ UI thừa (Sạch màn hình)
-                    document.getElementById('main-text').classList.add('hidden-ui');
-                    document.getElementById('sub-title').classList.add('hidden-ui');
-                    document.getElementById('countdown-box').classList.add('hidden-ui');
-
-                    // Hiện số to
-                    const bigCd = document.getElementById('big-countdown');
-                    bigCd.innerText = secondsLeft;
-                    bigCd.style.opacity = 1;
-                    bigCd.classList.add('pulse-anim');
-                }
-                // --- CHƯA ĐẾN 10 GIÂY (Ví dụ còn 11s, 12s...) ---
-                else if (secondsLeft > 10) {
-                    const d = Math.floor(dist / (1000*60*60*24));
-                    const h = Math.floor((dist % (1000*60*60*24)) / (1000*60*60));
-                    const m = Math.floor((dist % (1000*60*60)) / (1000*60));
-                    const s = Math.floor((dist % (1000*60)) / 1000);
-                    document.getElementById('d').innerText = d < 10 ? '0'+d : d;
-                    document.getElementById('h').innerText = h < 10 ? '0'+h : h;
-                    document.getElementById('m').innerText = m < 10 ? '0'+m : m;
-                    document.getElementById('s').innerText = s < 10 ? '0'+s : s;
-
-                    // Đảm bảo số to chưa hiện
-                    document.getElementById('big-countdown').style.opacity = 0;
-                }
-                // --- GIAO THỪA (0 GIÂY) ---
-                else {
-                    if (!state.isFinale && !state.postFinale) {
-                        this.startFinale();
-                    }
-                    // Kết thúc Giao thừa (Hết mưa pháo)
-                    if (dist < -CONFIG.finaleDuration && state.isFinale) {
-                        state.isFinale = false;
-                        state.postFinale = true;
-                        document.getElementById('main-text').classList.remove('shake');
-                        clearInterval(timer);
+        /* --- 1. SOUND FX (MOBILE OPTIMIZED) --- */
+        const SoundFX = {
+            // Không init ngay, chờ chạm màn hình mới init
+            createContext() {
+                if (!window.state.audioCtx) {
+                    const AudioContext = window.AudioContext || window.webkitAudioContext;
+                    if(AudioContext) {
+                        window.state.audioCtx = new AudioContext();
+                        
+                        // Kỹ thuật "Silent Play" để đánh thức loa trên iOS
+                        const buffer = window.state.audioCtx.createBuffer(1, 1, 22050); 
+                        const source = window.state.audioCtx.createBufferSource(); 
+                        source.buffer = buffer; 
+                        source.connect(window.state.audioCtx.destination); 
+                        if (source.start) source.start(0); 
+                        else if (source.noteOn) source.noteOn(0);
                     }
                 }
-            }, 100);
-        },
-        startFinale() {
-            state.isFinale = true;
+                
+                // Resume nếu bị suspended
+                if(window.state.audioCtx && window.state.audioCtx.state === 'suspended') {
+                    window.state.audioCtx.resume();
+                }
+            },
 
-            // Hiện lại chữ Happy New Year
-            const title = document.getElementById('main-text');
-            const sub = document.getElementById('sub-title');
+            playBoom() {
+                if(!window.state.audioCtx) return;
+                const t = window.state.audioCtx.currentTime;
+                
+                // Tạo tiếng nổ bằng Noise Buffer
+                const bufferSize = window.state.audioCtx.sampleRate * 1.5; // 1.5 giây
+                const buffer = window.state.audioCtx.createBuffer(1, bufferSize, window.state.audioCtx.sampleRate);
+                const data = buffer.getChannelData(0);
+                for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+                
+                const noise = window.state.audioCtx.createBufferSource();
+                noise.buffer = buffer;
+                
+                // Lọc tiếng bass
+                const filter = window.state.audioCtx.createBiquadFilter();
+                filter.type = 'lowpass'; filter.frequency.value = 800;
+                
+                const gain = window.state.audioCtx.createGain();
+                
+                noise.connect(filter); filter.connect(gain); gain.connect(window.state.audioCtx.destination);
+                
+                // Hiệu ứng Fade out (Nổ to rồi nhỏ dần)
+                gain.gain.setValueAtTime(1, t);
+                gain.gain.exponentialRampToValueAtTime(0.001, t + 1);
+                
+                noise.start(t); noise.stop(t + 1);
+            }
+        };
 
-            title.innerText = "Happy New Year";
-            title.classList.remove('hidden-ui');
-            title.classList.add('shake');
-
-            sub.classList.remove('hidden-ui');
-
-            // Ẩn số đếm ngược to
-            document.getElementById('big-countdown').style.display = 'none';
+        /* --- 2. PHYSICS --- */
+        class Vector2 {
+            constructor(x, y) { this.x = x; this.y = y; }
+            add(v) { this.x += v.x; this.y += v.y; return this; }
+            mult(s) { this.x *= s; this.y *= s; return this; }
         }
-    };
 
-    window.onload = () => {
-        Engine.init();
-        Manager.init();
-    };
-</script>
+        class Particle {
+            constructor(x, y, hue) {
+                this.pos = new Vector2(x, y);
+                const angle = Math.random() * Math.PI * 2;
+                const speed = Math.random() * 12 + 2; 
+                this.vel = new Vector2(Math.cos(angle) * speed, Math.sin(angle) * speed);
+                this.friction = window.CONFIG.friction;
+                this.gravity = window.CONFIG.gravity;
+                this.hue = hue + Math.random() * 20 - 10;
+                this.brightness = Math.random() * 40 + 50;
+                this.alpha = 1;
+                this.decay = Math.random() * 0.005 + 0.004; 
+            }
+            update() {
+                this.vel.mult(this.friction); this.vel.y += this.gravity;
+                this.pos.add(this.vel); this.alpha -= this.decay;
+            }
+            draw(ctx) {
+                ctx.beginPath(); ctx.arc(this.pos.x, this.pos.y, 1.5, 0, Math.PI * 2);
+                ctx.fillStyle = `hsla(${this.hue}, 100%, ${this.brightness}%, ${this.alpha})`; ctx.fill();
+            }
+        }
+
+        class Rocket {
+            constructor() {
+                this.x = Math.random() * window.innerWidth;
+                this.y = window.innerHeight;
+                this.tx = this.x + (Math.random() - 0.5) * 40; 
+                this.ty = window.innerHeight * 0.1 + Math.random() * (window.innerHeight * 0.3);
+                this.speed = 12 + Math.random() * 4; 
+                this.angle = Math.atan2(this.ty - this.y, this.tx - this.x);
+                this.vx = Math.cos(this.angle) * this.speed;
+                this.vy = Math.sin(this.angle) * this.speed;
+                this.hue = Math.random() * 360;
+                this.trail = []; this.dead = false;
+                
+                // ĐÃ BỎ TIẾNG RÍT (Whistle) THEO YÊU CẦU
+            }
+            update() {
+                this.trail.push({x: this.x, y: this.y});
+                if(this.trail.length > 5) this.trail.shift();
+                this.x += this.vx; this.y += this.vy; this.vy += 0.05;
+                if (this.y <= this.ty || this.vy >= 0) {
+                    this.dead = true; Engine.explode(this.x, this.y, this.hue);
+                }
+            }
+            draw(ctx) {
+                ctx.beginPath();
+                if(this.trail.length) {
+                    ctx.moveTo(this.trail[0].x, this.trail[0].y);
+                    for(let p of this.trail) ctx.lineTo(p.x, p.y);
+                }
+                ctx.strokeStyle = `hsl(${this.hue}, 100%, 50%)`;
+                ctx.lineWidth = 2; ctx.stroke();
+            }
+        }
+
+        /* --- 3. ENGINE --- */
+        const Engine = {
+            canvas: document.getElementById('sky-canvas'),
+            ctx: null, w: 0, h: 0, rockets: [], particles: [], lastVolley: 0,
+            init() {
+                this.ctx = this.canvas.getContext('2d');
+                this.resize();
+                window.addEventListener('resize', () => this.resize());
+                this.loop();
+            },
+            resize() { this.w = this.canvas.width = window.innerWidth; this.h = this.canvas.height = window.innerHeight; },
+            explode(x, y, hue) {
+                SoundFX.playBoom(); // Luôn nổ BÙM
+                for (let i = 0; i < window.CONFIG.particlesPerExplosion; i++) this.particles.push(new Particle(x, y, hue));
+            },
+            loop(timestamp) {
+                requestAnimationFrame((t) => this.loop(t));
+                if (!this.lastVolley) this.lastVolley = timestamp;
+                const elapsed = timestamp - this.lastVolley;
+                const interval = window.state.isFinale ? 600 : 2000; 
+
+                if (window.state.isFinale && elapsed > interval) {
+                    for(let k=0; k<8; k++) setTimeout(() => this.rockets.push(new Rocket()), k*100);
+                    this.lastVolley = timestamp;
+                }
+                if (!window.state.isFinale && Math.random() < window.CONFIG.chanceWaiting) {
+                    this.rockets.push(new Rocket());
+                }
+
+                this.ctx.globalCompositeOperation = 'destination-out';
+                this.ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+                this.ctx.fillRect(0, 0, this.w, this.h);
+                this.ctx.globalCompositeOperation = 'lighter';
+
+                for (let i = this.rockets.length - 1; i >= 0; i--) {
+                    this.rockets[i].draw(this.ctx); this.rockets[i].update();
+                    if (this.rockets[i].dead) this.rockets.splice(i, 1);
+                }
+                for (let i = this.particles.length - 1; i >= 0; i--) {
+                    this.particles[i].draw(this.ctx); this.particles[i].update();
+                    if (this.particles[i].alpha <= 0) this.particles.splice(i, 1);
+                }
+            }
+        };
+
+        /* --- 4. MANAGER (GLOBAL WINDOW) --- */
+        window.Manager = {
+            init() {
+                this.runCountdown();
+                setInterval(() => this.spawnWish(), 300);
+
+                // --- MOBILE AUDIO UNLOCKER ---
+                const unlock = () => {
+                    if(window.state.audioUnlocked) return;
+                    SoundFX.createContext(); // CHỈ TẠO KHI CHẠM
+                    
+                    document.getElementById('hint').style.opacity = 0;
+                    document.getElementById('hint').innerText = "Đã bật âm thanh!";
+                    setTimeout(() => document.getElementById('hint').remove(), 2000);
+                    
+                    window.state.audioUnlocked = true;
+                };
+                
+                // Bắt dính mọi sự kiện chạm/click để mở khóa
+                ['click', 'touchstart', 'touchend'].forEach(evt => 
+                    document.body.addEventListener(evt, unlock, {once:true})
+                );
+            },
+            
+            spawnWish() {
+                if (!window.state.isFinale && !window.state.postFinale) return;
+                const container = document.getElementById('wishes-container');
+                const el = document.createElement('div');
+                el.classList.add('floating-wish');
+                el.innerText = window.CONFIG.wishesList[Math.floor(Math.random() * window.CONFIG.wishesList.length)];
+                el.style.left = Math.random() * 90 + '%';
+                el.style.fontSize = (Math.random() * 1.5 + 1) + 'rem';
+                el.style.animationDuration = (Math.random() * 3 + 4) + 's';
+                container.appendChild(el);
+                setTimeout(() => el.remove(), 7000);
+            },
+
+            // Hàm Console Admin
+            setTestTime(seconds) {
+                window.CONFIG.targetDate = new Date().getTime() + (seconds * 1000);
+                window.state.isFinale = false;
+                window.state.postFinale = false;
+                document.getElementById('main-text').innerText = "Waiting...";
+                document.getElementById('main-text').classList.remove('hidden-ui', 'shake');
+                document.getElementById('sub-title').classList.remove('hidden-ui');
+                document.getElementById('countdown-box').classList.remove('hidden-ui');
+                document.getElementById('big-countdown').style.opacity = 0;
+                console.log(`Đã reset đếm ngược: ${seconds} giây`);
+            },
+
+            runCountdown() {
+                const timer = setInterval(() => {
+                    let dest = window.CONFIG.targetDate;
+                    if (typeof dest !== 'number') dest = new Date(dest).getTime();
+                    const now = new Date().getTime();
+                    const dist = dest - now;
+                    const secondsLeft = Math.ceil(dist / 1000);
+
+                    if (secondsLeft <= 10 && secondsLeft > 0) {
+                        document.getElementById('main-text').classList.add('hidden-ui');
+                        document.getElementById('sub-title').classList.add('hidden-ui');
+                        document.getElementById('countdown-box').classList.add('hidden-ui');
+                        const bigCd = document.getElementById('big-countdown');
+                        bigCd.innerText = secondsLeft;
+                        bigCd.style.opacity = 1;
+                        bigCd.classList.add('pulse-anim');
+                    } 
+                    else if (secondsLeft > 10) {
+                        const d = Math.floor(dist / (1000*60*60*24));
+                        const h = Math.floor((dist % (1000*60*60*24)) / (1000*60*60));
+                        const m = Math.floor((dist % (1000*60*60)) / (1000*60));
+                        const s = Math.floor((dist % (1000*60)) / 1000);
+                        document.getElementById('d').innerText = d < 10 ? '0'+d : d;
+                        document.getElementById('h').innerText = h < 10 ? '0'+h : h;
+                        document.getElementById('m').innerText = m < 10 ? '0'+m : m;
+                        document.getElementById('s').innerText = s < 10 ? '0'+s : s;
+                        document.getElementById('big-countdown').style.opacity = 0;
+                    } 
+                    else {
+                        if (!window.state.isFinale && !window.state.postFinale) {
+                            this.startFinale();
+                        }
+                        if (dist < -window.CONFIG.finaleDuration && window.state.isFinale) {
+                            this.endFinale();
+                        }
+                    }
+                }, 100);
+            },
+            startFinale() {
+                window.state.isFinale = true;
+                const title = document.getElementById('main-text');
+                const sub = document.getElementById('sub-title');
+                title.innerText = "Happy New Year";
+                title.classList.remove('hidden-ui');
+                title.classList.add('shake');
+                sub.classList.remove('hidden-ui');
+                document.getElementById('big-countdown').style.display = 'none';
+            },
+            endFinale() {
+                window.state.isFinale = false;
+                window.state.postFinale = true;
+                document.getElementById('main-text').classList.remove('shake');
+            }
+        };
+
+        window.onload = () => {
+            Engine.init();
+            window.Manager.init();
+        };
+    </script>
 </body>
 </html>
